@@ -1,0 +1,24 @@
+# permissions for end users to edit logprojects.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logproject-editor-role
+rules:
+- apiGroups:
+  - logservice.hsc.philips.com.cn
+  resources:
+  - logprojects
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - logservice.hsc.philips.com.cn
+  resources:
+  - logprojects/status
+  verbs:
+  - get

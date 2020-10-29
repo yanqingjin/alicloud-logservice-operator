@@ -1,1 +1,0 @@
-# alicloud-logservice-operator

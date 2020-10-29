@@ -1,0 +1,11 @@
+domain: hsc.philips.com.cn
+layout: go.kubebuilder.io/v2
+projectName: alicloud-logservice-operator
+repo: github.com/philips-internal/alicloud-logservice-operator
+resources:
+- group: logservice
+  kind: LogProject
+  version: v1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}

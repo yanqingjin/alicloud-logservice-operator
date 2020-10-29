@@ -1,0 +1,7 @@
+apiVersion: logservice.hsc.philips.com.cn/v1
+kind: LogProject
+metadata:
+  name: logproject-sample
+spec:
+  # Add fields here
+  foo: bar
