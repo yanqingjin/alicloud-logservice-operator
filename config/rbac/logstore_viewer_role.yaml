@@ -1,0 +1,20 @@
+# permissions for end users to view logstores.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logstore-viewer-role
+rules:
+- apiGroups:
+  - logservice.hsc.philips.com.cn
+  resources:
+  - logstores
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - logservice.hsc.philips.com.cn
+  resources:
+  - logstores/status
+  verbs:
+  - get
