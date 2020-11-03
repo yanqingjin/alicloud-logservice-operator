@@ -1,0 +1,5 @@
+channels:
+- currentCSV: alicloud-logservice-operator.v0.0.1
+  name: alpha
+defaultChannel: alpha
+packageName: alicloud-logservice-operator

@@ -3,6 +3,7 @@ module github.com/philips-internal/alicloud-logservice-operator
 go 1.13
 
 require (
+	github.com/aliyun/aliyun-log-go-sdk v0.1.15
 	github.com/go-logr/logr v0.1.0
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1

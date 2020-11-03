@@ -1,0 +1,51 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.1.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+  name: alicloud-logservice-operator.vX.Y.Z
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: LogProject is the Schema for the logprojects API
+      displayName: Log Project
+      kind: LogProject
+      name: logprojects.logservice.hsc.philips.com.cn
+      version: v1
+    - description: LogStore is the Schema for the logstores API
+      displayName: Log Store
+      kind: LogStore
+      name: logstores.logservice.hsc.philips.com.cn
+      version: v1
+  description: Operator for AliCloud LogService
+  displayName: alicloud-logservice-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - AliCloud LogService
+  links:
+  - name: Alicloud Logservice Operator
+    url: https://alicloud-logservice-operator.domain
+  maturity: alpha
+  provider:
+    name: HealthSuite China Team
+  version: 0.0.0

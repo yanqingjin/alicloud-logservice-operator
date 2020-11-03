@@ -29,7 +29,7 @@ type LogStoreSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of LogStore. Edit LogStore_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Name string `json:"name"`
 }
 
 // LogStoreStatus defines the observed state of LogStore

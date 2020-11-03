@@ -1,0 +1,48 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - logservice.hsc.philips.com.cn
+  resources:
+  - logprojects
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - logservice.hsc.philips.com.cn
+  resources:
+  - logprojects/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - logservice.hsc.philips.com.cn
+  resources:
+  - logstores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - logservice.hsc.philips.com.cn
+  resources:
+  - logstores/status
+  verbs:
+  - get
+  - patch
+  - update

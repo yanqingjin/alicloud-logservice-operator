@@ -18,7 +18,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"os"
 
+	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,10 +41,63 @@ type LogProjectReconciler struct {
 // +kubebuilder:rbac:groups=logservice.hsc.philips.com.cn,resources=logprojects/status,verbs=get;update;patch
 
 func (r *LogProjectReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("logproject", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("logproject", req.NamespacedName)
+	region := os.Getenv("REGION")
+	accessKey := os.Getenv("ALICLOUD_ACCESS_KEY")
+	secretKey := os.Getenv("ALICLOUD_SECRET_KEY")
 
-	// your logic here
+	slsClient := sls.CreateNormalInterface(region, accessKey, secretKey, "")
+
+	var logProject logservicev1.LogProject
+	if err := r.Get(ctx, req.NamespacedName, &logProject); err != nil {
+		log.Error(err, "Unable to fetch Project")
+
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	logProjectName := logProject.Spec.Name
+	log.Info("Reconciling LogProject: " + logProjectName)
+	reconciliationAction := getReconciliationAction(&logProject)
+	logServiceFinalizer := "logservice.project.finalizer.hsc.philips.com"
+
+	if reconciliationAction == reconcileAdd {
+		isProjectExist, err := slsClient.CheckProjectExist(logProjectName)
+		if err != nil {
+			log.Error(err, "Unable to check Project status")
+
+			return ctrl.Result{}, err
+		}
+
+		if !isProjectExist {
+			log.Info("Create Project")
+			_, err := slsClient.CreateProject(logProjectName, logProject.Spec.Description)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			log.Info("project created successfully:" + logProjectName)
+		}
+		if !containsString(logProject.ObjectMeta.Finalizers, logServiceFinalizer) {
+			logProject.ObjectMeta.Finalizers = append(logProject.ObjectMeta.Finalizers, logServiceFinalizer)
+			if err := r.Update(context.Background(), &logProject); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	} else if reconciliationAction == reconcileDelete {
+		log.Info("Delete Project")
+		if containsString(logProject.ObjectMeta.Finalizers, logServiceFinalizer) {
+			err := slsClient.DeleteProject(logProject.Spec.Name)
+			if err != nil {
+				fmt.Println(err)
+				return ctrl.Result{}, err
+			}
+
+			logProject.ObjectMeta.Finalizers = removeString(logProject.ObjectMeta.Finalizers, logServiceFinalizer)
+			if err := r.Update(context.Background(), &logProject); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -50,4 +106,13 @@ func (r *LogProjectReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&logservicev1.LogProject{}).
 		Complete(r)
+}
+
+func getReconciliationAction(logProject *logservicev1.LogProject) ReconciliationAction {
+	switch {
+	case logProject.ObjectMeta.DeletionTimestamp != nil:
+		return reconcileDelete
+	default:
+		return reconcileAdd
+	}
 }

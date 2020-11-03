@@ -1,0 +1,53 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: logstores.logservice.hsc.philips.com.cn
+spec:
+  group: logservice.hsc.philips.com.cn
+  names:
+    kind: LogStore
+    listKind: LogStoreList
+    plural: logstores
+    singular: logstore
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: LogStore is the Schema for the logstores API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: LogStoreSpec defines the desired state of LogStore
+          properties:
+            name:
+              description: Foo is an example field of LogStore. Edit LogStore_types.go to remove/update
+              type: string
+          required:
+          - name
+          type: object
+        status:
+          description: LogStoreStatus defines the observed state of LogStore
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
