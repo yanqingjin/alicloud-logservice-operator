@@ -136,6 +136,22 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
+                env:
+                - name: REGION
+                  valueFrom:
+                    secretKeyRef:
+                      key: REGION
+                      name: alicloud-credentials
+                - name: ALICLOUD_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: ALICLOUD_ACCESS_KEY
+                      name: alicloud-credentials
+                - name: ALICLOUD_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: ALICLOUD_SECRET_KEY
+                      name: alicloud-credentials
                 image: leonjin/alicloud-logservice-operator:0.0.1
                 name: manager
                 resources:

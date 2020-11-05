@@ -18,11 +18,11 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,51 +49,63 @@ func (r *LogProjectReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 	slsClient := sls.CreateNormalInterface(region, accessKey, secretKey, "")
 
-	var logProject logservicev1.LogProject
-	if err := r.Get(ctx, req.NamespacedName, &logProject); err != nil {
-		log.Error(err, "Unable to fetch Project")
+	logProject := &logservicev1.LogProject{}
+	if err := r.Get(ctx, req.NamespacedName, logProject); err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			log.Info("LogProject resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "Unable to fetch LogProject")
 
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	logProjectName := logProject.Spec.Name
-	log.Info("Reconciling LogProject: " + logProjectName)
-	reconciliationAction := getReconciliationAction(&logProject)
+	log.Info("Reconciling LogProject=" + logProjectName)
 	logServiceFinalizer := "logservice.project.finalizer.hsc.philips.com"
 
-	if reconciliationAction == reconcileAdd {
-		isProjectExist, err := slsClient.CheckProjectExist(logProjectName)
-		if err != nil {
-			log.Error(err, "Unable to check Project status")
+	isProjectExist, err := slsClient.CheckProjectExist(logProjectName)
+	if err != nil {
+		log.Error(err, "Unable to check Project status")
+		return ctrl.Result{}, err
+	}
 
+	if !isProjectExist {
+		log.Info("Create New Project")
+		_, err := slsClient.CreateProject(logProjectName, logProject.Spec.Description)
+		if err != nil {
 			return ctrl.Result{}, err
 		}
-
-		if !isProjectExist {
-			log.Info("Create Project")
-			_, err := slsClient.CreateProject(logProjectName, logProject.Spec.Description)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			log.Info("project created successfully:" + logProjectName)
+		logProject.Status.Spec = logProject.Spec
+		err = r.Status().Update(ctx, logProject)
+		if err != nil {
+			log.Error(err, "Failed to update LogService status")
+			return ctrl.Result{}, err
 		}
+		log.Info("LogProject created successfully:" + logProjectName)
+		log.Info("Append Finalizer")
 		if !containsString(logProject.ObjectMeta.Finalizers, logServiceFinalizer) {
 			logProject.ObjectMeta.Finalizers = append(logProject.ObjectMeta.Finalizers, logServiceFinalizer)
-			if err := r.Update(context.Background(), &logProject); err != nil {
+			if err = r.Update(context.Background(), logProject); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
-	} else if reconciliationAction == reconcileDelete {
+	}
+
+	if logProject.ObjectMeta.DeletionTimestamp != nil {
 		log.Info("Delete Project")
 		if containsString(logProject.ObjectMeta.Finalizers, logServiceFinalizer) {
-			err := slsClient.DeleteProject(logProject.Spec.Name)
+			err := slsClient.DeleteProject(logProjectName)
 			if err != nil {
-				fmt.Println(err)
+				log.Error(err, "Failed to delete LogService")
 				return ctrl.Result{}, err
 			}
 
 			logProject.ObjectMeta.Finalizers = removeString(logProject.ObjectMeta.Finalizers, logServiceFinalizer)
-			if err := r.Update(context.Background(), &logProject); err != nil {
+			if err = r.Update(context.Background(), logProject); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -106,13 +118,4 @@ func (r *LogProjectReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&logservicev1.LogProject{}).
 		Complete(r)
-}
-
-func getReconciliationAction(logProject *logservicev1.LogProject) ReconciliationAction {
-	switch {
-	case logProject.ObjectMeta.DeletionTimestamp != nil:
-		return reconcileDelete
-	default:
-		return reconcileAdd
-	}
 }

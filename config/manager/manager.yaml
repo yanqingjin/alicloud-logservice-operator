@@ -29,6 +29,22 @@ spec:
         - --enable-leader-election
         image: controller:latest
         name: manager
+        env:
+          - name: REGION
+            valueFrom:
+              secretKeyRef:
+                name: alicloud-credentials
+                key: REGION
+          - name: ALICLOUD_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: alicloud-credentials
+                key: ALICLOUD_ACCESS_KEY
+          - name: ALICLOUD_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: alicloud-credentials
+                key: ALICLOUD_SECRET_KEY
         resources:
           limits:
             cpu: 100m
